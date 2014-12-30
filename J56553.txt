@@ -1,0 +1,169 @@
+/*********************************************************************/         
+/*  Program: J56553                                                  */         
+/*     Text: DSPLOG Run Time Audit List                              */         
+/*     Date: 01.12.98                                                */         
+/*   Author: ce mClean                                               */         
+/*  Project: Kxxxxx                                                  */         
+/*                                                                   */         
+/*********************************************************************/         
+/* Function: DSPLOG Run Time Audit List                              */         
+/*                                                                   */         
+/*********************************************************************/         
+/*           Begin Program                                           */         
+/*********************************************************************/         
+ START:      PGM        PARM(&DATE)                                             
+                                                                                
+/*********************************************************************/         
+/*           Variables                                               */         
+/*********************************************************************/         
+                                                                                
+/* reference dates for SUN thru SAT                                  */         
+             DCL        VAR(&SUN) TYPE(*CHAR) VALUE('111013')                   
+             DCL        VAR(&MON) TYPE(*CHAR) VALUE('111113')                   
+             DCL        VAR(&TUE) TYPE(*CHAR) VALUE('111213')                   
+             DCL        VAR(&WED) TYPE(*CHAR) VALUE('111313')                   
+             DCL        VAR(&THU) TYPE(*CHAR) VALUE('111413')                   
+             DCL        VAR(&FRI) TYPE(*CHAR) VALUE('111513')                   
+             DCL        VAR(&SAT) TYPE(*CHAR) VALUE('111613')                   
+             DCL        VAR(&EOM) TYPE(*CHAR) VALUE('103113')                   
+                                                                                
+             DCL        VAR(&DATE) TYPE(*CHAR) LEN(6)                           
+             DCL        VAR(&DAY) TYPE(*CHAR) LEN(3)                            
+                                                                                
+             DCL        VAR(&SIDAT) TYPE(*CHAR) LEN(6)                          
+             DCL        VAR(&EDAT) TYPE(*CHAR) LEN(8)                           
+             DCL        VAR(&FFMT) TYPE(*CHAR) LEN(7) VALUE(*SYSVAL)            
+             DCL        VAR(&TFMT) TYPE(*CHAR) LEN(7) VALUE(*JUL)               
+             DCL        VAR(&SEP) TYPE(*CHAR) LEN(7) VALUE(*NONE)               
+             DCL        VAR(&ERTST) TYPE(*CHAR) LEN(1)                          
+                                                                                
+             DCL        VAR(&RDATE) TYPE(*CHAR) LEN(6)                          
+                                                                                
+             DCL        VAR(&#SIDAT) TYPE(*CHAR) LEN(25)                        
+             DCL        VAR(&#CTRY) TYPE(*CHAR) LEN(2)                          
+             DCL        VAR(&#FFMT) TYPE(*CHAR) LEN(8) VALUE(*MDY)              
+             DCL        VAR(&#OFSET) TYPE(*CHAR) LEN(6)                         
+             DCL        VAR(&#INTVL) TYPE(*CHAR) LEN(8) VALUE(*ENDCURM)         
+             DCL        VAR(&#SODAT) TYPE(*CHAR) LEN(6)                         
+             DCL        VAR(&#TFMT) TYPE(*CHAR) LEN(8) VALUE(*MDY)              
+                                                                                
+/*********************************************************************/         
+/*           Program Monitor Messages                                */         
+/*********************************************************************/         
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(STDERR))                
+                                                                                
+/*********************************************************************/         
+/*           Mainline Program                                        */         
+/*********************************************************************/         
+/*                                                                   */         
+                                                                                
+/* get day of the week for input parm                                */         
+             RTVDAT     DATE(&DATE) DAY3U(&DAY)                                 
+             SNDPGMMSG  MSG('value of &DAY is: ' *CAT &DAY)                     
+                                                                                
+/* get julian date for input parm                                    */         
+             CHGVAR     VAR(&SIDAT) VALUE(&DATE)                                
+             CALL       PGM(X0028) PARM(&SIDAT &EDAT &FFMT &TFMT +              
+                          &SEP &ERTST)                                          
+             SNDPGMMSG  MSG('value of &SIDAT is: ' *CAT &SIDAT)                 
+                                                                                
+/* get mmddyy for last day of the month                              */         
+             CHGVAR     VAR(&#SIDAT) VALUE(&DATE)                               
+             CALL       PGM(X0027) PARM(&#SIDAT &#CTRY &#FFMT +                 
+                          &#OFSET &#INTVL &#SODAT &#TFMT &ERTST)                
+             SNDPGMMSG  MSG('value of &#SODAT is: ' *CAT &#SODAT)               
+                                                                                
+/* do the simple one if it's Sunday                                  */         
+             IF         COND(&DAY *EQ 'SUN') THEN(DO)                           
+             CHGVAR     VAR(&RDATE) VALUE(&SUN)                                 
+             IF         COND(&DATE *EQ &#SODAT) THEN(CHGVAR +                   
+                          VAR(&RDATE) VALUE(&EOM))                              
+             SNDPGMMSG  MSG('value of &RDATE is: ' *CAT &RDATE)                 
+             GOTO       CMDLBL(SUNDAY)                                          
+             ENDDO                                                              
+                                                                                
+/* set reference date based on day of the week                       */         
+             IF         COND(&DAY *EQ 'MON') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&MON))                                          
+             IF         COND(&DAY *EQ 'TUE') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&TUE))                                          
+             IF         COND(&DAY *EQ 'WED') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&WED))                                          
+             IF         COND(&DAY *EQ 'THU') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&THU))                                          
+             IF         COND(&DAY *EQ 'FRI') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&FRI))                                          
+             IF         COND(&DAY *EQ 'SAT') THEN(CHGVAR VAR(&RDATE) +          
+                          VALUE(&SAT))                                          
+             IF         COND(&DATE *EQ &#SODAT) THEN(CHGVAR +                   
+                          VAR(&RDATE) VALUE(&EOM))                              
+             SNDPGMMSG  MSG('value of &RDATE is: ' *CAT &RDATE)                 
+                                                                                
+/* get history for this batch date- PROCESS01                        */         
+             OVRDBF     FILE(F56550) SHARE(*YES)                                
+             OPNQRYF    FILE((F56550)) QRYSLT('HSBDAT *EQ ' *CAT +              
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ +                       
+                          "PROCESS01"') KEYFLD((HSGDAT) (HSGTIM))               
+             OVRPRTF    FILE(R56553) SAVE(*YES)                                 
+             CALL       PGM(P56553) PARM(&RDATE)                                
+             CLOF       OPNID(F56550)                                           
+             DLTOVR     FILE(*ALL)                                              
+                                                                                
+/* get history for this batch date- EOD, CTL, QBATCH3, QBATCH4       */         
+             OVRDBF     FILE(F56550) SHARE(*YES)                                
+             OPNQRYF    FILE((F56550)) QRYSLT('HSBDAT *EQ ' *CAT +              
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ "EOD" *OR +             
+                          HSBDAT *EQ ' *CAT &SIDAT *CAT ' *AND +                
+                          HSJOBQ *EQ "QCTL" *OR HSBDAT *EQ ' *CAT +             
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ "QBATCH3"') +           
+                          KEYFLD((HSGDAT) (HSGTIM))                             
+             OVRPRTF    FILE(R56553) SAVE(*YES)                                 
+             CALL       PGM(P56553) PARM(&RDATE)                                
+             CLOF       OPNID(F56550)                                           
+             DLTOVR     FILE(*ALL)                                              
+             GOTO       CMDLBL(END1)                                            
+                                                                                
+/* get history for this batch date- SUNDAY                           */         
+ SUNDAY:                                                                        
+/* get history for this batch date- PROCESS01, PROCESS02             */         
+             OVRDBF     FILE(F56550) SHARE(*YES)                                
+             OPNQRYF    FILE((F56550)) QRYSLT('HSBDAT *EQ ' *CAT +              
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ "PROCESS01" +           
+                          *OR HSBDAT *EQ ' *CAT &SIDAT *CAT ' *AND +            
+                          HSJOBQ *EQ "PROCESS02"') KEYFLD((HSGDAT) +            
+                          (HSGTIM))                                             
+             OVRPRTF    FILE(R56553) SAVE(*YES)                                 
+             CALL       PGM(P56553) PARM(&RDATE)                                
+             CLOF       OPNID(F56550)                                           
+             DLTOVR     FILE(*ALL)                                              
+                                                                                
+/* get history for this batch date- EOD, CTL, QBATCH3, QBATCH4       */         
+             OVRDBF     FILE(F56550) SHARE(*YES)                                
+             OPNQRYF    FILE((F56550)) QRYSLT('HSBDAT *EQ ' *CAT +              
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ "EOD" *OR +             
+                          HSBDAT *EQ ' *CAT &SIDAT *CAT ' *AND +                
+                          HSJOBQ *EQ "QCTL" *OR HSBDAT *EQ ' *CAT +             
+                          &SIDAT *CAT ' *AND HSJOBQ *EQ "QBATCH3"') +           
+                          KEYFLD((HSGDAT) (HSGTIM))                             
+             OVRPRTF    FILE(R56553) SAVE(*YES)                                 
+             CALL       PGM(P56553) PARM(&RDATE)                                
+             CLOF       OPNID(F56550)                                           
+             DLTOVR     FILE(*ALL)                                              
+             GOTO       CMDLBL(END1)                                            
+                                                                                
+/*********************************************************************/         
+/*           Normal End of Program                                   */         
+/*********************************************************************/         
+ END1:                                                                          
+             DLTOVR     FILE(*ALL)                                              
+             RETURN                                                             
+                                                                                
+/*********************************************************************/         
+/*           Standard Error Handeling                                */         
+/*********************************************************************/         
+ STDERR:                                                                        
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +                          
+                          MSGDTA('Program aborted on an expected +              
+                          escape mesage.') MSGTYPE(*ESCAPE)                     
+                                                                                
+ END:        ENDPGM                                                             

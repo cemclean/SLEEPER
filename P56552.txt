@@ -1,0 +1,165 @@
+     F****************************************************************          
+     F* Program: P56552                                              *          
+     F*    Text: SLEEPER Schedules                                   *          
+     F*    Date: 01.12.98                                            *          
+     F*  Author: Charlie McLean                                      *          
+     F* Project: Kxxxxx                                              *          
+     F*                                                              *          
+     F****************************************************************          
+     F*      Begin Program                                           *          
+     F****************************************************************          
+     FF9501   IP  E                    DISK                                     
+     FF9801   IF  E           K        DISK                                     
+     FF98301  IF  E           K        DISK                                     
+     FF82100  IF  E           K        DISK                                     
+     FR56552  O   E             99     PRINTER                                  
+     E                    ARA        66  1                                      
+     E                    ARB        66  1                                      
+     I*  Bring in local data area...                                            
+     I           UDS                                                            
+     I                                        1  66 #HDG1                       
+      * named constants                                                         
+     I              'Sleeper Schedule'    C         HDG2                        
+     I              'J82001    '          C         DPGMID                      
+     I              'SVR Not Found -------C         SILOST                      
+     I              '---------------------                                      
+     I              '----------------->>>'                                      
+     I              'Dream Writer Version-C         DELOST                      
+     I              ' Not Found ----------                                      
+     I              '----------------->>>'                                      
+     I              'World Writer Version-C         @1LOST                      
+     I              ' Not Found ----------                                      
+     I              '----------------->>>'                                      
+      * first time processing...                                                
+     C           *IN25     IFEQ *OFF                                            
+     C                     EXSR $FIRST                                          
+     C                     MOVE *ON       *IN25                                 
+     C                     ENDIF                                                
+      * change julian start date to mmyydd                                      
+     C                     MOVE ' '       PSERR   1                             
+     C                     MOVE UNJTD     INDAT   6                             
+     C                     CALL 'X0028  '                                       
+      *                    ----  -----                                          
+     C                     PARM INDAT     #SIDAT  6                             
+     C                     PARM *BLANKS   #EDAT   8                             
+     C                     PARM '*JUL    '#FFMT   7                             
+     C                     PARM '*SYSVAL '#TFMT   7                             
+     C                     PARM '*NONE   '#SEP    7                             
+     C                     PARM *BLANKS   PSERR                                 
+     C                     MOVE #SIDAT    #JTD                                  
+      * format job name                                                         
+     C                     MOVELUNPRM8    #PRL8                                 
+     C                     MOVE *BLANKS   #PRM1                                 
+     C                     MOVE *BLANKS   #PRM2                                 
+     C                     MOVELUNPRM1    #PRM1                                 
+     C                     MOVELUNPRM2    #PRM2                                 
+     C                     MOVE *BLANKS   #MD                                   
+      * get F9801 description (default)                                         
+     C           UNJPID    CHAINF9801                32                         
+      *                                                                         
+     C           *IN32     IFNE *ON                                             
+     C                     MOVELSIMD      #MD                                   
+     C                     ELSE                                                 
+     C                     MOVELSILOST    #MD                                   
+     C                     ENDIF                                                
+      * if version, get DW version description                                  
+     C           UNPID     IFGT *BLANKS                                         
+     C           DEKEY     KLIST                                                
+     C                     KFLD           DEK1   10                             
+     C                     KFLD           DEK2   10                             
+     C                     KFLD           DEK3    1                             
+     C                     KFLD           DEK4    30                            
+      *                                                                         
+     C                     MOVE *BLANKS   DEK1                                  
+     C                     MOVE *BLANKS   DEK2                                  
+     C                     MOVE *BLANKS   DEK3                                  
+     C                     MOVE *ZEROS    DEK4                                  
+      *                                                                         
+     C                     MOVE UNPID     DEK1                                  
+     C                     MOVE UNVERS    DEK2                                  
+     C                     MOVE 'R'       DEK3                                  
+     C                     Z-ADD1         DEK4                                  
+     C           DEKEY     CHAINF98301               34                         
+      *                                                                         
+     C           *IN34     IFNE *ON                                             
+     C                     MOVELDETXT1    #MD                                   
+     C                     ELSE                                                 
+     C                     MOVELDELOST    #MD                                   
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      * get text for a world writer version                                     
+     C           UNJPID    IFEQ DPGMID                                          
+     C           @1KEY     KLIST                                                
+     C                     KFLD           @1K1   10                             
+     C                     KFLD           @1K2   10                             
+      *                                                                         
+     C                     MOVE *BLANKS   @1K1                                  
+     C                     MOVE *BLANKS   @1K2                                  
+      *                                                                         
+     C                     MOVELUNPRM1    @1K1                                  
+     C                     MOVELUNPRM2    @1K2                                  
+     C           @1KEY     CHAINF82100               35                         
+     C           *IN35     IFNE *ON                                             
+     C                     MOVEL@1JD      #MD                                   
+     C                     ELSE                                                 
+     C                     MOVEL@1LOST    #MD                                   
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      *                                                                         
+      *  Print heading (if necessary) and detail line.                          
+      *                                                                         
+     C           *IN99     IFEQ *ON                                             
+     C                     MOVE *OFF      *IN99                                 
+     C                     WRITE#HDR                                            
+     C                     ENDIF                                                
+      *                                                                         
+     C                     WRITE#DTL                                            
+      *---SR: Center text. ----------------------------------------SR-*         
+     C           $CTR      BEGSR                                                
+      *------------------------------------------------------------             
+     C                     Z-ADD66        X       30                            
+     C                     Z-ADD*ZEROS    NBRBLK  30                            
+     C                     MOVE *OFF      *IN31                                 
+      *  Determine how many rightmost non-blank characters there                
+      *  are.                                                                   
+     C           X         DOUEQ0                                               
+     C           *IN31     OREQ *ON                                             
+      *                                                                         
+     C           ARA,X     IFEQ *BLANKS                                         
+     C                     SUB  1         X                                     
+     C                     ADD  1         NBRBLK                                
+     C                     ELSE                                                 
+     C                     MOVE *ON       *IN31                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     ENDDO                                                
+      *  Divide total number of rightmost blanks in half to                     
+      *  determine how many should be in front of text in array.                
+     C           NBRBLK    DIV  2         HLFBLK  30                            
+      *  Center the resulting array.                                            
+     C                     MOVE *BLANKS   ARB                                   
+     C           HLFBLK    ADD  1         Y       30                            
+     C                     MOVEAARA       ARB,Y                                 
+     C                     MOVEAARB       ARA                                   
+      *                                                                         
+     C                     ENDSR                                                
+      *---SR: First time thru. ------------------------------------SR-*         
+     C           $FIRST    BEGSR                                                
+      *---------------------------------------------------------------          
+     C                     TIME           TIME                                  
+     C                     Z-ADD*ZEROS    PAGE                                  
+      *  Center headings.                                                       
+      *                                                                         
+     C                     MOVEA#HDG1     ARA                                   
+     C                     EXSR $CTR                                            
+     C                     MOVEAARA       #HDG1                                 
+      *                                                                         
+     C                     MOVEA*BLANKS   ARA                                   
+     C                     MOVEAHDG2      ARA                                   
+     C                     EXSR $CTR                                            
+     C                     MOVEAARA       #HDG2                                 
+      *                                                                         
+     C                     MOVE *ON       *IN99                                 
+     C                     ENDSR                                                
+      *---------------------------------------------------------------*         

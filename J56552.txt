@@ -1,0 +1,113 @@
+/*********************************************************************/         
+/*  Program: J56552                                                  */         
+/*     Text: SLEEPER Schedules                                       */         
+/*     Date: 0112.987                                                */         
+/*   Author: Charlie McLean                                          */         
+/*  Project: Kxxxxx                                                  */         
+/*                                                                   */         
+/*********************************************************************/         
+/*           Begin Program                                           */         
+/*********************************************************************/         
+             PGM                                                                
+
+/*********************************************************************/         
+/*           Mainline Program                                        */         
+/*********************************************************************/         
+                                                                                
+/* daily PROCESS01 schedule                                          */         
+             OVRDBF     FILE(F9501) SHARE(*YES)                                 
+             OPNQRYF    FILE((F9501)) QRYSLT( +                                 
+                        'UNMON  *EQ "Y" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *OR  UNTUE  *EQ "Y" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *OR  UNWED  *EQ "Y" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *OR  UNTHR  *EQ "Y" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *OR  UNFRI  *EQ "Y" *AND UNJOBQ *EQ "PROCESS01" +           
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "PROCESS01" +           
+                         ') KEYFLD((UNJTTM)) +                                  
+                          ALWCPYDTA(*OPTIMIZE)                                  
+             CHGDTAARA  DTAARA(*LDA (1 66)) +                                   
+                          VALUE('Daily Schedule- PROCESS01')                    
+             CALL       PGM(P56552)                                             
+             CLOF       OPNID(F9501)                                            
+             DLTOVR     FILE(F9501)                                             
+                                                                                
+/* daily EOD schedule                                                */         
+             OVRDBF     FILE(F9501) SHARE(*YES)                                 
+             OPNQRYF    FILE((F9501)) QRYSLT( +                                 
+                        'UNMON  *EQ "Y" *AND UNJOBQ *EQ "EOD" +                 
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "EOD" +                 
+                    *OR  UNTUE  *EQ "Y" *AND UNJOBQ *EQ "EOD" +                 
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "EOD" +                 
+                    *OR  UNWED  *EQ "Y" *AND UNJOBQ *EQ "EOD" +                 
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "EOD" +                 
+                    *OR  UNTHR  *EQ "Y" *AND UNJOBQ *EQ "EOD" +                 
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "EOD" +                 
+                    *OR  UNFRI  *EQ "Y" *AND UNJOBQ *EQ "EOD" +                 
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "EOD" +                 
+                    *OR  UNMON  *EQ "Y" *AND UNJOBQ *EQ "QCTL" +                
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "QCTL" +                
+                    *OR  UNTUE  *EQ "Y" *AND UNJOBQ *EQ "QCTL" +                
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "QCTL" +                
+                    *OR  UNWED  *EQ "Y" *AND UNJOBQ *EQ "QCTL" +                
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "QCTL" +                
+                    *OR  UNTHR  *EQ "Y" *AND UNJOBQ *EQ "QCTL" +                
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "QCTL" +                
+                    *OR  UNFRI  *EQ "Y" *AND UNJOBQ *EQ "QCTL" +                
+                    *AND UNAJTY *NE "S" *AND UNJOBQ *EQ "QCTL" +                
+                         ') KEYFLD((UNJTTM)) +                                  
+                          ALWCPYDTA(*OPTIMIZE)                                  
+             CHGDTAARA  DTAARA(*LDA (1 66)) +                                   
+                          VALUE('End of Day- EOD & QCTL')                       
+             CALL       PGM(P56552)                                             
+             CLOF       OPNID(F9501)                                            
+             DLTOVR     FILE(F9501)                                             
+                                                                                
+/* daily Saturday schedule                                           */         
+             OVRDBF     FILE(F9501) SHARE(*YES)                                 
+             OPNQRYF    FILE((F9501)) QRYSLT( +                                 
+                        'UNSAT  *EQ "Y" +                                       
+                    *AND UNAJTY *NE "S" +                                       
+                         ') +                                                   
+                          KEYFLD((UNJOBQ *DESCEND) (UNJTTM)) +                  
+                          ALWCPYDTA(*OPTIMIZE)                                  
+             CHGDTAARA  DTAARA(*LDA (1 66)) +                                   
+                          VALUE('Saturday Schedule')                            
+             CALL       PGM(P56552)                                             
+             CLOF       OPNID(F9501)                                            
+             DLTOVR     FILE(F9501)                                             
+                                                                                
+/* daily Sunday schedule                                             */         
+             OVRDBF     FILE(F9501) SHARE(*YES)                                 
+             OPNQRYF    FILE((F9501)) QRYSLT( +                                 
+                        'UNSUN  *EQ "Y" +                                       
+                    *AND UNAJTY *NE "S" +                                       
+                         ') +                                                   
+                          KEYFLD((UNJTTM)) +                                    
+                          ALWCPYDTA(*OPTIMIZE)                                  
+             CHGDTAARA  DTAARA(*LDA (1 66)) +                                   
+                          VALUE('Sunday Schedule')                              
+             CALL       PGM(P56552)                                             
+             CLOF       OPNID(F9501)                                            
+             DLTOVR     FILE(F9501)                                             
+                                                                                
+/* other than daily schedules                                        */         
+             OVRDBF     FILE(F9501) SHARE(*YES)                                 
+             OPNQRYF    FILE((F9501)) QRYSLT( +                                 
+                        'UNRFRQ *NE "D" +                                       
+                    *AND UNAJTY *NE "S" +                                       
+                         ') +                                                   
+                          KEYFLD((UNJTTM)) ALWCPYDTA(*OPTIMIZE)                 
+             CHGDTAARA  DTAARA(*LDA (1 66)) +                                   
+                          VALUE('Other Than Daily Schedules')                   
+             CALL       PGM(P56552)                                             
+             CLOF       OPNID(F9501)                                            
+             DLTOVR     FILE(F9501)                                             
+                                                                                
+/* list of speeper jobs by job name                                  */         
+             RUNQRY     QRY(Q9501D)                                             
+                                                                                
+             ENDPGM                                                             

@@ -1,0 +1,287 @@
+     H                                                                          
+     F****************************************************************          
+     F* Program: P565501                                             *          
+     F*    Text: DSPLOG Run Time Capture- Update History             *          
+     F*    Date: 01.06.98                                            *          
+     F*  Author: ce mClean                                           *          
+     F* Project: Kxxxxx                                              *          
+     F*                                                              *          
+      * to compile, create this file and then delete                            
+      * CRTDUPOBJ  OBJ(TAAHSTAP) FROMLIB(TAATOOL) +                             
+      *              OBJTYPE(*FILE) TOLIB(SERUTL) NEWOBJ(QHSTP)                 
+      *                                                                         
+      *                                                                         
+     F****************************************************************          
+     F* ID  F  C  H  L  -   Function of Indicators                   *          
+     F* --  -- -- -- --   ------------------------------------------ *          
+     F*        01       -                                            *          
+     F*        04       -                                            *          
+     F*                                                              *          
+     F*                                                              *          
+     F****************************************************************          
+     F*      Begin Program                                           *          
+     F****************************************************************          
+     FQHSTP   IF  E                    DISK                                     
+     FF9501L1 IF  E           K        DISK                                     
+     FF9801   IF  E           K        DISK                                     
+     FF98301  IF  E           K        DISK                                     
+     FF82100  IF  E           K        DISK                                     
+     FF56550  UF  E           K        DISK                      A              
+      *                                                                         
+     I            DS                                                            
+     I                                        1   6 YYMMDD                      
+     I                                        1   2 TYY                         
+     I                                        3   4 TMM                         
+     I                                        5   6 TDD                         
+      *                                                                         
+     I            DS                                                            
+     I                                        1   6 TDATE                       
+     I                                        1   2 TMMO                        
+     I                                        3   4 TDDO                        
+     I                                        5   6 TYYO                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60HSGTIM                      
+     I                                        1   20HSGH                        
+     I                                        3   40HSGM                        
+     I                                        5   60HSGS                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60HSFTIM                      
+     I                                        1   20HSFH                        
+     I                                        3   40HSFM                        
+     I                                        5   60HSFS                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60HSNTIM                      
+     I                                        1   20HSTH                        
+     I                                        3   40HSTM                        
+     I                                        5   60HSTS                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1  10 JOBNAM                      
+     I                                        1   2 TTYPE                       
+     I* Named constants                                                         
+24885I              'SEROPR    '          C         DSUSER                      
+     I              'JN'                  C         DTYPE                       
+     I              'J82001    '          C         DPGMID                      
+23355I              'Unattended IPL after-C         $SMD                        
+23355I              ' abnormal system end'                                      
+      *                                                                         
+     C           *ENTRY    PLIST                                                
+     C                     PARM           DBDAT   6                             
+      *                                                                         
+     C           HSKEY     KLIST                                                
+     C                     KFLD           HSK1   10        job name             
+     C                     KFLD           HSK2   10        use name             
+     C                     KFLD           HSK3    6        job nbr              
+      *                                                                         
+     C                     READ QHSTP                    LR                     
+     C           *INLR     DOUEQ*ON                                             
+      **** job started- add record                                              
+     C           MSGID     IFEQ 'CPF1124'                                       
+23355C           MSGID     OREQ 'CPF0930'                  PWRDWNSYS            
+23355C           MSGID     OREQ 'CPF0998'                  IPL ABEND            
+23355C           MSGID     OREQ 'BRM1951'                  SAVSYS               
+     C                     CLEARI56550                                          
+      *** process if a sleeper job, BRMS, or IPL                                
+     C           TTYPE     IFEQ 'JN'                                            
+23355C           TTYPE     OREQ 'BR'                                            
+23355C           TTYPE     OREQ 'IP'                                            
+23355C           TTYPE     OREQ 'SA'                                            
+     C                     MOVE JOBNAM    HSJBNM                                
+     C                     MOVE USRNAM    HSUSER                                
+     C                     MOVE JOBNBR    HSJNBR                                
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TJDAT     HSGDAT                                
+     C                     MOVE TIME      HSGTIM                                
+     C                     MOVE DBDAT     HSBDAT                                
+      * get F9501 stuff                                                         
+     C           UNKEY     KLIST                                                
+     C                     KFLD           UNK1   40        job name             
+     C                     MOVE *BLANKS   UNK1                                  
+     C                     MOVELHSJBNM    UNK1                                  
+     C           UNKEY     CHAINF9501L1              31                         
+      **                                                                        
+     C           *IN31     IFNE *ON                                             
+     C                     MOVE UNSY      HSSY                                  
+     C                     MOVE UNJPID    HSJPID                                
+     C                     MOVE UNLIBO    HSLIBO                                
+     C                     MOVE UNVERS    HSVERS                                
+..   C                     MOVE UNJOBQ    HSJOBQ                                
+     C                     MOVE UNQRYN    HSQRYN                                
+     C                     MOVE UNLL      HSLL                                  
+      * get F9801 description (default)                                         
+     C           HSJPID    CHAINF9801                32                         
+      *                                                                         
+     C           *IN32     IFNE *ON                                             
+     C                     MOVE SIMD      HSMD                                  
+     C                     ENDIF                                                
+      * if version, get DW version description                                  
+     C           DEKEY     KLIST                                                
+     C                     KFLD           DEK1   10                             
+     C                     KFLD           DEK2   10                             
+     C                     KFLD           DEK3    1                             
+     C                     KFLD           DEK4    30                            
+      *                                                                         
+     C                     MOVE *BLANKS   DEK1                                  
+     C                     MOVE *BLANKS   DEK2                                  
+     C                     MOVE *BLANKS   DEK3                                  
+     C                     MOVE *ZEROS    DEK4                                  
+      *                                                                         
+     C                     MOVE UNPID     DEK1                                  
+     C                     MOVE HSVERS    DEK2                                  
+     C                     MOVE 'R'       DEK3                                  
+     C                     Z-ADD1         DEK4                                  
+     C           DEKEY     CHAINF98301               34                         
+      *                                                                         
+     C           *IN34     IFNE *ON                                             
+     C                     MOVELDETXT1    HSMD                                  
+     C                     ENDIF                                                
+      * get text for a world writer version                                     
+     C*          HSJPID    IFEQ DPGMID                                          
+     C           @1KEY     KLIST                                                
+     C                     KFLD           @1K1   10                             
+     C                     KFLD           @1K2   10                             
+      *                                                                         
+     C                     MOVE *BLANKS   @1K1                                  
+     C                     MOVE *BLANKS   @1K2                                  
+      *                                                                         
+     C                     MOVELUNPRM1    @1K1                                  
+     C                     MOVELUNPRM2    @1K2                                  
+     C           @1KEY     CHAINF82100               35                         
+     C           *IN35     IFNE *ON                                             
+     C                     MOVEL@1JD      HSMD                                  
+     C                     ENDIF                                                
+      *                                                                         
+     C*                    ENDIF                                                
+      **                                                                        
+     C                     ENDIF                                                
+      *                                                                         
+23355C           TTYPE     IFEQ 'BR'                                            
+23355C           TTYPE     OREQ 'IP'                                            
+23355C                     MOVE *BLANKS   HSJOBQ                                
+23355C                     MOVEL'EOD'     HSJOBQ                                
+23355C                     ENDIF                                                
+23355C           JOBNAM    IFEQ 'IPLA'                                          
+23355C                     MOVEL$SMD      HSMD                                  
+23355C                     ENDIF                                                
+      *                                                                         
+23355C           JOBNAM    IFEQ 'SAVSYS'                                        
+23355C                     MOVE *BLANKS   HSJOBQ                                
+23355C                     MOVEL'EOD'     HSJOBQ                                
+23355C                     ENDIF                                                
+      *                                                                         
+27944C                     MOVE *BLANKS   HSK1                                  
+27944C                     MOVE *BLANKS   HSK2                                  
+27944C                     MOVE *BLANKS   HSK3                                  
+27944 *                                                                         
+27944C                     MOVE JOBNAM    HSK1                                  
+27944C                     MOVE USRNAM    HSK2                                  
+27944C                     MOVE JOBNBR    HSK3                                  
+27944C           HSKEY     CHAINF56550               33                         
+27944C           *IN33     IFEQ *ON                                             
+     C                     WRITEI56550                                          
+27944C                     ENDIF                                                
+      ***                                                                       
+     C                     ENDIF                                                
+      ****                                                                      
+     C                     ENDIF                                                
+      *                                                                         
+      * job ended- update record                                                
+     C           MSGID     IFEQ 'CPF1164'                                       
+23355C           MSGID     OREQ 'CPF0934'                                       
+      * process if a sleeper job                                                
+     C           TTYPE     IFEQ 'JN'                                            
+23355C           TTYPE     OREQ 'BR'                                            
+23355C           TTYPE     OREQ 'IP'                                            
+23355C           TTYPE     OREQ 'SA'                                            
+     C                     MOVE *BLANKS   HSK1                                  
+     C                     MOVE *BLANKS   HSK2                                  
+     C                     MOVE *BLANKS   HSK3                                  
+      *                                                                         
+     C                     MOVE JOBNAM    HSK1                                  
+     C                     MOVE USRNAM    HSK2                                  
+     C                     MOVE JOBNBR    HSK3                                  
+      *                                                                         
+     C           HSKEY     CHAINF56550               33                         
+     C           *IN33     IFEQ *OFF                                            
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TJDAT     HSFDAT                                
+     C                     MOVE TIME      HSFTIM                                
+     C                     MOVE MSGTYP    HSECDE                                
+     C                     EXSR TIMDIF                                          
+     C                     UPDATI56550                                          
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+     C                     READ QHSTP                    LR                     
+     C                     ENDDO                                                
+      *****************************************************                     
+     C           CVTDAT    BEGSR                                                
+      * convert message date to YYJulian ******************                     
+     C                     MOVE TMM       TMMO                                  
+     C                     MOVE TDD       TDDO                                  
+     C                     MOVE TYY       TYYO                                  
+      *                                                                         
+     C                     MOVE ' '       PSERR   1                             
+     C                     CALL 'X0028  '                                       
+      *                    ----  -----                                          
+     C                     PARM TDATE     #SIDAT  6                             
+     C                     PARM *BLANKS   #EDAT   8                             
+     C                     PARM '*SYSVAL '#FFMT   7                             
+     C                     PARM '*JUL    '#TFMT   7                             
+     C                     PARM '*NONE   '#SEP    7                             
+     C                     PARM *BLANKS   PSERR   1                             
+     C                     MOVE #SIDAT    TJDAT   6                             
+     C                     ENDSR                                                
+      *****************************************************                     
+     C           TIMDIF    BEGSR                                                
+      * calc total run time  ******************************                     
+     C                     MOVE HSGDAT    #SIDA1  6        Date 1               
+     C                     MOVE HSFDAT    #SIDA2  6        Date 1               
+     C                     MOVE *BLANKS   #SIFM1  7        Format 1             
+     C                     MOVE *BLANKS   #SIFM2  7        Format 2             
+     C                     MOVE *BLANKS   #SITYE  1        Type of Cal          
+     C                     MOVE *BLANKS   $ERTST  1        Error Indicator      
+     C                     MOVE *BLANKS   $#X     9        Difference           
+     C                     MOVE *BLANKS   #SICT1  2        Ctry 1 (Opt)         
+     C                     MOVE *BLANKS   #SICT2  2        Ctry 2 (Opt)         
+      *                                                                         
+     C                     CALL 'X0035  '                                       
+      *                    ----  -----                                          
+     C                     PARM           #SIDA1  6        Date 1               
+     C                     PARM           #SIDA2  6        Date 2               
+     C                     PARM           #SIFM1  7        Format 1             
+     C                     PARM           #SIFM2  7        Format 2             
+     C                     PARM           #SITYE  1        Type of Cal          
+     C                     PARM           $ERTST           Error Indicator      
+     C                     PARM           $#X     9        Difference           
+     C                     PARM           #SICT1  2        Ctry 1 (Opt)         
+     C                     PARM           #SICT2  2        Ctry 2 (Opt)         
+     C                     MOVE $#X       WRKD    30                            
+      *                                                                         
+     C           WRKD      IFGT 0                                               
+     C                     ADD  240000    HSFTIM                                
+     C                     ENDIF                                                
+      * total seconds start time                                                
+     C                     Z-ADD0         HSFT    60                            
+     C           HSFH      MULT 3600      HSF1    60                            
+     C           HSFM      MULT 60        HSF2    60                            
+     C           HSF1      ADD  HSF2      HSFT                                  
+     C                     ADD  HSFS      HSFT                                  
+      * total seconds end time                                                  
+     C                     Z-ADD0         HSGT    60                            
+     C           HSGH      MULT 3600      HSG1    60                            
+     C           HSGM      MULT 60        HSG2    60                            
+     C           HSG1      ADD  HSG2      HSGT                                  
+     C                     ADD  HSGS      HSGT                                  
+      *                                                                         
+     C           HSFT      SUB  HSGT      HSST    60                            
+      * turn it back in to HHMMSS                                               
+     C           HSST      DIV  3600      HSTH                                  
+     C                     MVR            HSST                                  
+     C           HSST      DIV  60        HSTM                                  
+     C                     MVR            HSTS                                  
+     C                     ENDSR                                                

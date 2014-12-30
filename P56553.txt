@@ -1,0 +1,321 @@
+     F*--------------------------------------------------------------*          
+     F* Program: P56553                                              *          
+     F*    Text: SLEEPER Run-Time Audit Report                       *          
+     F*    Date: 01.12.98                                            *          
+     F*  Author: Charlie McLean                                      *          
+     F* Project: Kxxxxx                                              *          
+     F*                                                              *          
+     F*--------------------------------------------------------------*          
+     F* Function: SLEEPER Run-Time Audit Report                      *          
+     F*                                                              *          
+     F*--------------------------------------------------------------*          
+     F*           Modifications                                      *          
+     F*--------------------------------------------------------------*          
+     F* CCxxxx    02.19.2008  Charlie McLean                         *          
+     F*           -------------------------------------------------- *          
+     F*           Added sndpgmmsg if end code is GT 0.               *          
+     F*                                                              *          
+     F* CCxxxx    02.21.2008  Charlie McLean                         *          
+     F*           -------------------------------------------------- *          
+     F*           Added filter for control programs that add false   *          
+     F*           processing times:                                  *          
+     F*           J56556   Release EOD Jobq                          *          
+     F*           J565562  Begin Dedicated System EOD                *          
+     F*           J565564  End Dedicated System EOD                  *          
+     F*           J56551   Hold EOD Jobq                             *          
+     F* 12.11.13  IPL      IPL                                       *          
+     F*           IPLA     IPL after abnormal system end             *          
+     F*                                                              *          
+     F*                                                              *          
+     F*--------------------------------------------------------------*          
+     F*      Begin Program                                           *          
+     F*--------------------------------------------------------------*          
+     FF56550  IP  E                    DISK                                     
+     FF56550L1IF  E           K        DISK                                     
+     F            I56550                            KRENAMEI56550B              
+     FR56553  O   E             99     PRINTER                                  
+     E                    ARA        66  1               center heading         
+     E                    ARB        66  1               center heading         
+      * named constants                                                         
+     I              'Jobs Submitted on-'  C         HDG1                        
+     I              'Sleeper Job Completi-C         HDG2                        
+     I              'ons'                                                       
+      *                                                                         
+     I            DS                                                            
+     I                                        1   6 #BDAT                       
+     I                                        1   2 #BM                         
+     I                                        3   4 #BD                         
+     I                                        5   6 #BY                         
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60#RTIM                       
+     I                                        1   20#RH                         
+     I                                        3   40#RM                         
+     I                                        5   60#RS                         
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60#NTIM                       
+     I                                        1   20#NH                         
+     I                                        3   40#NM                         
+     I                                        5   60#NS                         
+      *                                                                         
+     I            DS                                                            
+     I                                        1   60#DIFF                       
+     I                                        1   20#DH                         
+     I                                        3   40#DM                         
+     I                                        5   60#DS                         
+      * total net time this run                                                 
+     I            DS                                                            
+     I                                        1   60#NTIMT                      
+     I                                        1   20#NTH                        
+     I                                        3   40#NTM                        
+     I                                        5   60#NTS                        
+      * total net time comparison run                                           
+     I            DS                                                            
+     I                                        1   60#RTIMT                      
+     I                                        1   20#RTH                        
+     I                                        3   40#RTM                        
+     I                                        5   60#RTS                        
+      *                                                                         
+     I*          UDS                                                            
+     I*                                       1   6 #RDATA                      
+      *                                                                         
+     C           *ENTRY    PLIST                                                
+     C                     PARM           #RDATA  6                             
+      * first time processing...                                                
+     C           *IN25     IFEQ *OFF                                            
+     C                     EXSR $FIRST                                          
+     C                     MOVE *ON       *IN25                                 
+     C                     ENDIF                                                
+      *                                                                         
+      *  Print heading (if necessary) and detail line.                          
+      *                                                                         
+     C           *IN99     IFEQ *ON                                             
+     C                     MOVE *OFF      *IN99                                 
+     C                     WRITE#HDR                                            
+     C                     ENDIF                                                
+      *                                                                         
+     C                     CLEAR#DTL                                            
+     C                     MOVE *ON       *IN35            no prt ctl           
+     C                     MOVE HSJBNM    #JBNM            job name             
+     C                     Z-ADDHSGTIM    #GTIM            start time           
+     C                     Z-ADDHSFTIM    #FTIM            end time             
+     C                     MOVE HSECDE    #ECDE            end code             
+     C                     MOVE HSJPID    #JPID            program id           
+     C                     MOVE HSVERS    #VERS            version              
+     C                     MOVE HSJOBQ    #JOBQ            jobq                 
+     C                     MOVE HSLL      #LL              lib list             
+     C                     MOVE HSMD      #MD              description          
+      * don't add net time for control jobs                                     
+     C           HSJPID    CABEQ'J56556'  NOTIME           release EOD          
+     C           HSJPID    CABEQ'J565562' NOTIME           begin dedica         
+     C           HSJPID    CABEQ'J565564' NOTIME           end dedicate         
+     C           HSJPID    CABEQ'J56551'  NOTIME           hold EOD             
+     C           HSJPID    CABEQ'IPL'     NOTIME           hold EOD             
+     C           HSJPID    CABEQ'IPLA'    NOTIME           hold EOD             
+      *                                                                         
+     C                     MOVE *OFF      *IN35                                 
+     C                     Z-ADDHSNTIM    #NTIM            net time             
+      *                                                                         
+      * make this run time into seconds                                         
+     C           #NH       MULT 3600      #NTIMS  90                            
+     C           #NM       MULT 60        #NW     90                            
+     C                     ADD  #NW       #NTIMS                                
+     C                     ADD  #NS       #NTIMS                                
+     C                     ADD  #NTIMS    #NSEC   90                            
+      * get based-on-batch completion time for this job                         
+     C           HS1KEY    KLIST                                                
+     C                     KFLD           HS1K1  10                             
+     C                     KFLD           HS1K2   60                            
+      *                                                                         
+     C                     MOVE *BLANKS   HS1K1                                 
+     C                     MOVE *ZEROS    HS1K2                                 
+      *                                                                         
+     C                     MOVE HSJBNM    HS1K1                                 
+     C                     Z-ADD#RBDAT    HS1K2                                 
+     C           HS1KEY    CHAINF56550L1             36                         
+      *                                                                         
+     C           *IN36     IFNE *ON                                             
+     C           HSNTIM    ANDGT0                                               
+     C                     Z-ADDHSNTIM    #RTIM                                 
+      * make reference time into seconds                                        
+     C           #RH       MULT 3600      #RTIMS  90                            
+     C           #RM       MULT 60        #RW     90                            
+     C                     ADD  #RW       #RTIMS                                
+     C                     ADD  #RS       #RTIMS                                
+     C                     ADD  #RTIMS    #RSEC   90                            
+      * calc difference                                                         
+     C           #NTIMS    SUB  #RTIMS    #DIFFS  90                            
+      * state difference in HHMMSS                                              
+     C           #DIFFS    IFNE 0                                               
+     C           #DIFFS    DIV  3600      #DH                                   
+     C                     MVR            #DW     90                            
+     C           #DW       IFNE 0                                               
+     C           #DW       DIV  60        #DM                                   
+     C                     MVR            #DS                                   
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      * get absolute value of difference                                        
+     C                     Z-ADD0         #ABS                                  
+     C                     Z-ADD#DIFFS    #DIFFS       41                       
+     C           *IN41     IFEQ *ON                                             
+     C                     Z-ADD#DIFF     #DIFFN                                
+     C                     SUB  #DIFFS    #ABS    90                            
+     C                     ENDIF                                                
+      * state difference as a percent, if GT 2:00                               
+     C           #DIFFS    IFNE 0                                               
+     C           #RTIMS    ANDGT0                                               
+     C           #ABS      ANDGT120                                             
+     C           #DIFFS    DIV  #RTIMS    PCTW   113                            
+     C           PCTW      MULT 100       #PCT                                  
+     C                     ENDIF                                                
+      *                                                                         
+     C                     ENDIF                                                
+      *                                                                         
+     C           NOTIME    TAG                                                  
+      * sndpgmmsg if end code is gt 0                                           
+     C                     Z-ADD0         ##ECDE  20                            
+     C                     MOVE #ECDE     ##ECDE                                
+     C           ##ECDE    IFGT 0                                               
+     C                     CALL 'J565531'                                       
+      *                    ---- ---------                                       
+     C                     PARM           #JBNM                                 
+     C                     PARM           #ECDE                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     WRITE#DTL                                            
+      ********************************************* Total Time                  
+     CLR                   EXSR $TOTLS                                          
+      *********************************************                             
+      *---SR: Center text. ----------------------------------------SR-*         
+     C           $CTR      BEGSR                                                
+      *------------------------------------------------------------             
+     C                     Z-ADD66        X       30                            
+     C                     Z-ADD*ZEROS    NBRBLK  30                            
+     C                     MOVE *OFF      *IN31                                 
+      *  Determine how many rightmost non-blank characters there                
+      *  are.                                                                   
+     C           X         DOUEQ0                                               
+     C           *IN31     OREQ *ON                                             
+      *                                                                         
+     C           ARA,X     IFEQ *BLANKS                                         
+     C                     SUB  1         X                                     
+     C                     ADD  1         NBRBLK                                
+     C                     ELSE                                                 
+     C                     MOVE *ON       *IN31                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     ENDDO                                                
+      *  Divide total number of rightmost blanks in half to                     
+      *  determine how many should be in front of text in array.                
+     C           NBRBLK    DIV  2         HLFBLK  30                            
+      *  Center the resulting array.                                            
+     C                     MOVE *BLANKS   ARB                                   
+     C           HLFBLK    ADD  1         Y       30                            
+     C                     MOVEAARA       ARB,Y                                 
+     C                     MOVEAARB       ARA                                   
+      *                                                                         
+     C                     ENDSR                                                
+      *---SR: First time thru. ------------------------------------SR-*         
+     C           $FIRST    BEGSR                                                
+      *---------------------------------------------------------------          
+     C                     TIME           TIME                                  
+     C                     Z-ADD*ZEROS    PAGE                                  
+     C                     Z-ADD*ZEROS    #RTIMT                                
+      * move compare to batch date to numeric (MMDDYY)                          
+     C                     MOVE #RDATA    #RDAT                                 
+      * change mmddyy compare to batch to julian                                
+     C                     MOVE ' '       PSERR   1                             
+     C                     MOVE #RDATA    INDAT   6                             
+     C                     CALL 'X0028  '                                       
+      *                    ----  -----                                          
+     C                     PARM INDAT     #SIDAT  6                             
+     C                     PARM *BLANKS   #EDAT   8                             
+     C                     PARM '*SYSVAL '#FFMT   7                             
+     C                     PARM '*JUL    '#TFMT   7                             
+     C                     PARM '*NONE   '#SEP    7                             
+     C                     PARM *BLANKS   PSERR                                 
+     C                     MOVE #SIDAT    #RBDAT  60                            
+      * change julian batch date to mmyydd                                      
+     C                     MOVE ' '       PSERR   1                             
+     C                     MOVE HSBDAT    INDAT   6                             
+     C                     CALL 'X0028  '                                       
+      *                    ----  -----                                          
+     C                     PARM INDAT     #SIDAT  6                             
+     C                     PARM *BLANKS   #EDAT   8                             
+     C                     PARM '*JUL    '#FFMT   7                             
+     C                     PARM '*SYSVAL '#TFMT   7                             
+     C                     PARM '*NONE   '#SEP    7                             
+     C                     PARM *BLANKS   PSERR                                 
+     C                     MOVE #SIDAT    #BDAT   6                             
+      *  Center headings.                                                       
+      *                                                                         
+     C                     MOVELHDG1      #HDG1                                 
+     C           #HDG1     CAT  #BM:1     #HDG1                                 
+     C           #HDG1     CAT  '/':0     #HDG1                                 
+     C           #HDG1     CAT  #BD:0     #HDG1                                 
+     C           #HDG1     CAT  '/':0     #HDG1                                 
+     C           #HDG1     CAT  #BY:0     #HDG1                                 
+     C                     MOVEA*BLANKS   ARA                                   
+     C                     MOVEA#HDG1     ARA                                   
+     C                     EXSR $CTR                                            
+     C                     MOVEAARA       #HDG1  66                             
+      *                                                                         
+     C                     MOVEA*BLANKS   ARA                                   
+     C                     MOVEAHDG2      ARA                                   
+     C                     EXSR $CTR                                            
+     C                     MOVEAARA       #HDG2                                 
+      *                                                                         
+     C                     MOVE *ON       *IN99                                 
+     C                     ENDSR                                                
+      *---SR: Total Time Calcs ------------------------------------SR-*         
+     C           $TOTLS    BEGSR                                                
+      *---------------------------------------------------------------          
+      * calc difference                                                         
+     C           #NSEC     SUB  #RSEC     #DSEC   90                            
+      * state net time in HHMMSS                                                
+     C           #NSEC     IFNE 0                                               
+     C           #NSEC     DIV  3600      #NTH                                  
+     C                     MVR            #NTW    90                            
+     C           #NTW      IFNE 0                                               
+     C           #NTW      DIV  60        #NTM                                  
+     C                     MVR            #NTS                                  
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      * state reference time in HHMMSS                                          
+     C           #RSEC     IFNE 0                                               
+     C           #RSEC     DIV  3600      #RTH                                  
+     C                     MVR            #RTW    90                            
+     C           #RTW      IFNE 0                                               
+     C           #RTW      DIV  60        #RTM                                  
+     C                     MVR            #RTS                                  
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      * state difference in HHMMSS                                              
+     C           #DSEC     IFNE 0                                               
+     C           #DSEC     DIV  3600      #DH                                   
+     C                     MVR            #DW     90                            
+     C           #DW       IFNE 0                                               
+     C           #DW       DIV  60        #DM                                   
+     C                     MVR            #DS                                   
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      * get absolute value of difference                                        
+     C                     Z-ADD0         #ABS                                  
+     C                     Z-ADD#DIFF     #DIFT                                 
+     C                     Z-ADD#DSEC     #DSEC        41                       
+     C           *IN41     IFEQ *ON                                             
+     C                     Z-ADD#DIFF     #DIFTN                                
+     C                     SUB  #DSEC     #ABS    90                            
+     C                     ENDIF                                                
+      * state difference as a percent, if GT 2:00                               
+     C           #DSEC     IFNE 0                                               
+     C           #RSEC     ANDGT0                                               
+     C*          #ABS      ANDGT120                                             
+     C           #DSEC     DIV  #RSEC     PCTW   113                            
+     C           PCTW      MULT 100       #PCTT                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     WRITE#TOT                                            
+     C                     ENDSR                                                
+      *---------------------------------------------------------------          

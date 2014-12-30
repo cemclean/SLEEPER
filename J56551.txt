@@ -1,0 +1,40 @@
+/*********************************************************************/         
+/*  Program: J56551                                                  */         
+/*     Text: Hold EOD JOBQ, Release QBATCH, QBATCH2 thru QBATCH4     */         
+/*     Date: 01.11.98                                                */         
+/*   Author: ce mClean                                               */         
+/*  Project: Kxxxxx                                                  */         
+/*                                                                   */         
+/*********************************************************************/         
+/*           Begin Program                                           */         
+/*********************************************************************/         
+ START:      PGM                                                                
+
+/*********************************************************************/         
+/*           Mainline Program                                        */         
+/*********************************************************************/         
+             MONMSG     MSGID(CPF0000)                                          
+                                                                                
+             HLDJOBQ    JOBQ(EOD)                                               
+                                                                                
+  /* Release all held jobq's */                                                 
+             RLSJOBQ    JOBQ(QGPL/QBATCH)                                       
+                                                                                
+             RLSJOBQ    JOBQ(QGPL/PROCESS01)                                    
+             RLSJOBQ    JOBQ(QGPL/PROCESS02)                                    
+             RLSJOBQ    JOBQ(QGPL/PROCESS03)                                    
+             RLSJOBQ    JOBQ(QGPL/PROCESS04)                                    
+             RLSJOBQ    JOBQ(QGPL/POST)                                         
+             RLSJOBQ    JOBQ(QGPL/QBATCH)                                       
+             RLSJOBQ    JOBQ(QGPL/QBATCH2)                                      
+             RLSJOBQ    JOBQ(QGPL/QBATCH3)                                      
+             RLSJOBQ    JOBQ(QGPL/QBATCH4)                                      
+             RLSJOBQ    JOBQ(QGPL/QBATCH5)                                      
+             RLSJOBQ    JOBQ(QGPL/QBATCH6)                                      
+             RLSJOBQ    JOBQ(QGPL/QBATCH7)                                      
+                                                                                
+                                                                                
+/*********************************************************************/         
+/*           Normal End of Program                                   */         
+/*********************************************************************/         
+ END:        ENDPGM                                                             

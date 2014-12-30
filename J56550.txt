@@ -1,0 +1,115 @@
+/*********************************************************************/         
+/*  Program: J56550                                                  */         
+/*     Text: DSPLOG Run Time Capture                                 */         
+/*     Date: 01.08.98                                                */         
+/*   Author: CEMCLEAN                                               */         
+/*  Project: Kxxxxx                                                  */         
+/*                                                                   */         
+/*********************************************************************/         
+/*           Modifications                                           */         
+/*********************************************************************/         
+/*           12.06.2013 Charlie McLean                               */         
+/*           added CPI0995, CPF0998, and CPF0934 for IPL             */         
+/*           added BRM1951 start of SAVSYS                           */         
+/*                                                                   */         
+/*********************************************************************/         
+/*           Begin Program                                           */         
+/*********************************************************************/         
+ START:      PGM                                                                
+                                                                                
+/*********************************************************************/         
+/*           Variables                                               */         
+/*********************************************************************/         
+             DCL        VAR(&BEGTIM) TYPE(*CHAR) LEN(8) +                       
+                          VALUE('07:00:00')                                     
+             DCL        VAR(&BTIME) TYPE(*CHAR) LEN(6) VALUE('060000')          
+             DCL        VAR(&BEGDAT) TYPE(*CHAR) LEN(8)                         
+             DCL        VAR(&ENDTIM) TYPE(*CHAR) LEN(8) +                       
+                          VALUE('06:59:00')                                     
+             DCL        VAR(&ETIME) TYPE(*CHAR) LEN(6) VALUE('055959')          
+             DCL        VAR(&ENDDAT) TYPE(*CHAR) LEN(8)                         
+                                                                                
+             DCL        VAR(&DATE) TYPE(*CHAR) LEN(6)                           
+                                                                                
+             DCL        VAR(&SIDAT) TYPE(*CHAR) LEN(25) +                       
+                          VALUE('*TODAY')                                       
+             DCL        VAR(&CTRY) TYPE(*CHAR) LEN(2)                           
+             DCL        VAR(&FFMT) TYPE(*CHAR) LEN(8) VALUE(*SYSVAL)            
+             DCL        VAR(&OFSET) TYPE(*CHAR) LEN(6) VALUE('1-')              
+             DCL        VAR(&INTVL) TYPE(*CHAR) LEN(8) VALUE(*DAY)              
+             DCL        VAR(&SODAT) TYPE(*CHAR) LEN(6)                          
+             DCL        VAR(&TFMT) TYPE(*CHAR) LEN(8) VALUE(*MDY)               
+             DCL        VAR(&ERROR) TYPE(*CHAR) LEN(1)                          
+                                                                                
+             DCL        VAR(&BYMD) TYPE(*CHAR) LEN(6)                           
+             DCL        VAR(&BTXT) TYPE(*CHAR) LEN(12)                          
+             DCL        VAR(&ODOTXT) TYPE(*CHAR) LEN(12)                        
+                                                                                
+             DCL        VAR(&BDATE) TYPE(*CHAR) LEN(6)                          
+                                                                                
+/*********************************************************************/         
+/*           Program Monitor Messages                                */         
+/*********************************************************************/         
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(STDERR))                
+                                                                                
+/*********************************************************************/         
+/*           Mainline Program                                        */         
+/*********************************************************************/         
+             CHGJOB     LOG(4 0 *SECLVL) LOGCLPGM(*YES)                         
+                                                                                
+/* get today's date and add separators                               */         
+             RTVJOBA    DATE(&DATE)                                             
+             CVTDAT     DATE(&DATE) TOVAR(&ENDDAT) TOSEP(/)                     
+             SNDPGMMSG  MSG('value of &ENDDAT is: ' *CAT &ENDDAT)               
+                                                                                
+/* get yesterday's date and add separators                           */         
+             CALL       PGM(X0027) PARM(&SIDAT &CTRY &FFMT &OFSET +             
+                          &INTVL &SODAT &TFMT &ERROR)                           
+             CHGVAR     VAR(&BDATE) VALUE(&SODAT)                               
+             CVTDAT     DATE(&SODAT) TOVAR(&BEGDAT) TOSEP(/)                    
+             SNDPGMMSG  MSG('value of &BEGDAT is: ' *CAT &BEGDAT)               
+                                                                                
+/* dsplog for date/time range into pf T56550                         */         
+             CRTPF      FILE(QTEMP/T56550) RCDLEN(132) TEXT('pf for +           
+                          dsplog') OPTION(*NOSOURCE *NOLIST) +                  
+                          SIZE(*NOMAX)                                          
+             OVRPRTF    FILE(QPDSPLOG) HOLD(*YES)                               
+             DSPLOG     PERIOD((&BEGTIM &BEGDAT) (&ENDTIM &ENDDAT)) +           
+                          OUTPUT(*PRINT) MSGID(CPF1124 CPF1164 +                
+                          CPF0930 CPF0934 CPF0998 BRM1951)                      
+             CPYSPLF    FILE(QPDSPLOG) TOFILE(T56550) SPLNBR(*LAST)             
+             DLTSPLF    FILE(QPDSPLOG) SPLNBR(*LAST)                            
+             DLTOVR     FILE(QPDSPLOG)                                          
+                                                                                
+/* parse dsplog to dbf QHSTP (TAA Tool)                              */         
+             CRTDUPOBJ  OBJ(TAAHSTAP) FROMLIB(TAATOOL) +                        
+                          OBJTYPE(*FILE) TOLIB(QTEMP) NEWOBJ(QHSTP)             
+             CALL       PGM(P56550)                                             
+                                                                                
+/* get yesterday's date as julian                                    */         
+             CHGVAR     VAR(&TFMT) VALUE(*JUL)                                  
+             CALL       PGM(X0027) PARM(&SIDAT &CTRY &FFMT &OFSET +             
+                          &INTVL &SODAT &TFMT &ERROR)                           
+             SNDPGMMSG  MSG('value of &SODAT is: ' *CAT &SODAT)                 
+                                                                                
+/* update history file                                               */         
+             CALL       PGM(P565501) PARM(&SODAT)                               
+                                                                                
+/* print comparison report                                           */         
+             CALL       PGM(J56553) PARM(&BDATE)                                
+                                                                                
+/*********************************************************************/         
+/*           Normal End of Program                                   */         
+/*********************************************************************/         
+                                                                                
+             RETURN                                                             
+                                                                                
+/*********************************************************************/         
+/*           Standard Error Handeling                                */         
+/*********************************************************************/         
+ STDERR:                                                                        
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +                          
+                          MSGDTA('Program aborted on an expected +              
+                          escape mesage.') MSGTYPE(*ESCAPE)                     
+                                                                                
+ END:        ENDPGM                                                             

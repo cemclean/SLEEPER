@@ -1,0 +1,46 @@
+     A****************************************************************          
+     A*    (JDE) File Design Aid                                     *          
+     A*                                                              *          
+     A*    Created By : CHARLIE                                      *          
+     A*    Date       : 05/24/99                                     *          
+     A*    Time       : 093820                                       *          
+     A*                                                              *          
+     A*    File       : DSPLOG Run Time Capture- History File                   
+     A****************************************************************          
+     A                                      UNIQUE                              
+     A          R I56550                                                        
+     A                                      TEXT('DSPLOG Run Time Capture- +    
+     A                                      History File             ')         
+     A            HSJBNM    R               REFFLD(JBNM       F98FRFJ          )
+     A                                      CCSID(65535)                        
+     A            HSUSER    R               REFFLD(USER       F98FRFU          )
+     A                                      CCSID(65535)                        
+     A            HSJNBR    R               REFFLD(JNBR       F98FRFJ          )
+     A                                      CCSID(65535)                        
+     A            HSGDAT    R               REFFLD(GDAT       F98FRFG          )
+     A            HSGTIM    R               REFFLD(GTIM       F98FRFG          )
+     A            HSFDAT    R               REFFLD(FDAT       F98FRFF          )
+     A            HSFTIM    R               REFFLD(FTIM       F98FRFF          )
+     A            HSECDE    R               REFFLD(ECDE       F98FRFE          )
+     A                                      CCSID(65535)                        
+     A            HSBDAT    R               REFFLD(BDAT       F98FRFB          )
+     A            HSNTIM    R               REFFLD(NTIM       F98FRFN          )
+     A            HSSY      R               REFFLD(SY         F98FRFS          )
+     A                                      CCSID(65535)                        
+     A            HSJPID    R               REFFLD(JPID       F98FRFJ          )
+     A                                      CCSID(65535)                        
+     A            HSLIBO    R               REFFLD(LIBO       F98FRFL          )
+     A                                      CCSID(65535)                        
+     A            HSVERS    R               REFFLD(VERS       F98FRFV          )
+     A                                      CCSID(65535)                        
+     A            HSJOBQ    R               REFFLD(JOBQ       F98FRFJ          )
+     A                                      CCSID(65535)                        
+     A            HSQRYN    R               REFFLD(QRYN       F98FRFQ          )
+     A                                      CCSID(65535)                        
+     A            HSLL      R               REFFLD(LL         F98FRFL          )
+     A                                      CCSID(65535)                        
+     A            HSMD      R               REFFLD(MD         F98FRFM          )
+     A                                      CCSID(00037)                        
+     A          K HSJBNM                                                        
+     A          K HSUSER                                                        
+     A          K HSJNBR                                                        

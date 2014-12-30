@@ -1,0 +1,12 @@
+     A****************************************************************          
+     A*                                                              *          
+     A*    Created By : Charlie                                      *          
+     A*    Date       : 01.12.98                                     *          
+     A*    Time       : 075022                                       *          
+     A*                                                              *          
+     A*    File       : LF - Job Name, Batch Date                               
+     A****************************************************************          
+     A          R I56550                    PFILE(F56550)                       
+     A                                      TEXT('LF - Job, Batch')             
+     A          K HSJBNM                                                        
+     A          K HSBDAT                                                        

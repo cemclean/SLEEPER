@@ -1,0 +1,278 @@
+/*********************************************************************/         
+/*                                                                   */         
+/*  Program. . . . . . .   J95BATCH                                  */         
+/*                                                                   */         
+/*  Description. . . . .   Recurring batch job execution.            */         
+/*                                                                   */         
+/*  Program Revision Log                                             */         
+/*  --------------------                                             */         
+/*                                                                   */         
+/*       Date        Programmer        Description                   */         
+/*     --------      ----------     -------------------------------- */         
+/*     03/28/95      Beck           SAR #   867923                   */         
+/*     01/07/98      LKOLSTER       Changed to use Parm 8 as the Job */         
+/*                                    Name                           +          
+ *                                                                   +          
+ *-------------------------------------------------------------------*/         
+J95BATCH:    PGM        PARM(&PSJPID &PSLIBO &PSPID &PSVERS &PSUSER +           
+                          &PSJOBQ &PSAJTY &PSPRM1 &PSPRL1 &PSPRM2 +             
+                          &PSPRL2 &PSPRM3 &PSPRL3 &PSPRM4 &PSPRL4 +             
+                          &PSPRM5 &PSPRL5 &PSPRM6 &PSPRL6 &PSPRM7 +             
+                          &PSPRL7 &PSPRM8 &PSPRL8 &PSOUTQ &PSLL   +             
+                          &PSJSP  &PSOUTP)                                      
+/*                                                                   */         
+/* --------- Define program file(s) and variable(s). --------------- */         
+/*                                                                   */         
+             DCLF       FILE(F0092)                                             
+             DCL        VAR(&PSJPID    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSLIBO    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSPID     ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSVERS    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSUSER    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSJOBQ    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSAJTY    ) TYPE(*CHAR) LEN(1)                     
+             DCL        VAR(&PSPRM1    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM2    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM3    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM4    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM5    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM6    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM7    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRM8    ) TYPE(*CHAR) LEN(40)                    
+             DCL        VAR(&PSPRL1    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL2    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL3    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL4    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL5    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL6    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL7    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSPRL8    ) TYPE(*CHAR) LEN(3)                     
+             DCL        VAR(&PSOUTQ    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSLL      ) TYPE(*CHAR) LEN(275)                   
+             DCL        VAR(&PSJSP     ) TYPE(*CHAR) LEN(1)                     
+             DCL        VAR(&PSOUTP    ) TYPE(*CHAR) LEN(1)                     
+             DCL        VAR(&JOBID     ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&USER      ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&PSMSGQ    ) TYPE(*CHAR) LEN(10)                    
+             DCL        VAR(&RQSD      ) TYPE(*CHAR) LEN(512)                   
+             DCL        VAR(&CMD       ) TYPE(*CHAR) LEN(1024)                  
+             DCL        VAR(&Q         ) TYPE(*CHAR) LEN(1) VALUE('''')         
+             DCL        VAR(&J         ) TYPE(*DEC ) LEN(3 0)                   
+             DCL        VAR(&JOBPTY    ) TYPE(*CHAR) LEN( 7)      +             
+                          VALUE('*JOBD')                                        
+             DCL        VAR(&OUTPTY    ) TYPE(*CHAR) LEN( 7)      +             
+                          VALUE('*JOBD')                                        
+             DCL        VAR(&OUTQ      ) TYPE(*CHAR) LEN(10)      +             
+                          VALUE('*JOBD')                                        
+             DCL        VAR(&INLLIBL   ) TYPE(*CHAR) LEN(275)     +             
+                          VALUE('*JOBD')                                        
+             DCL        VAR(&LANGMSGF)    TYPE(*CHAR)  LEN(10)                  
+/* ********* Added ********** 01/07/98 ***************************** */         
+             DCL        VAR(&JOBNAME )    TYPE(*CHAR)  LEN(10)                  
+/*                                                                   */         
+/* --------- Global CPF error intercept. --------------------------- */         
+/*                                                                   */         
+             MONMSG     MSGID(CPF0000 CPC0000 CPD0000) EXEC(GOTO +              
+                          CMDLBL(ABEND))                                        
+             CHGJOB     LOG(4 0 *SECLVL) LOGCLPGM(*YES)                         
+                                                                                
+/*                                                                   */         
+/* --------- Retrieve job name and submitting message queue. ------- */         
+/*                                                                   */         
+             RTVJOBA    JOB(&JOBID) USER(&USER)                                 
+             CHGVAR     VAR(&PSMSGQ)  VALUE('SLEEPER')                          
+/* ********* Added ********** 01/07/98 ***************************** */         
+/*                                                                   */         
+/* --------- Load batch job name ----------------------------------- */         
+/*                                                                   */         
+             CHGVAR     VAR(&JOBNAME ) VALUE(&PSJPID)                           
+/* ********* End of code added ********** 01/07/98 ***************** */         
+/*                                                                   */         
+/* --------- Load batch user name ---------------------------------- */         
+/*                                                                   */         
+             IF         COND(&PSUSER *NE ' ') THEN(DO)                          
+             CHGVAR     VAR(&USER) VALUE(&PSUSER)                               
+             ENDDO                                                              
+/*                                                                   */         
+/* --------- Setup request data parameter w/ & w/o parameters ------ */         
+/*                                                                   */         
+RQSDTA:                                                                         
+             IF         COND(&PSAJTY *EQ ' ') THEN(DO)                          
+             CHGVAR     VAR(&RQSD) VALUE('CALL '         +                      
+                                         || &PSLIBO      +                      
+                                         |< '/'          +                      
+                                         || &PSJPID)                            
+             ENDDO                                                              
+             IF         COND(&PSAJTY *EQ 'V') THEN(DO)                          
+             CHGVAR     VAR(&RQSD) VALUE('CALL '         +                      
+                                         || &PSLIBO      +                      
+                                         |< '/'          +                      
+                                         || &PSJPID      +                      
+                                         || ' PARM('     +                      
+                                         || &Q           +                      
+                                         || &PSPID       +                      
+                                         || &Q           +                      
+                                         || ' '          +                      
+                                         || &Q           +                      
+                                         || &PSVERS      +                      
+                                         || &Q           +                      
+                                         || ')')                                
+             ENDDO                                                              
+             IF         COND(&PSAJTY *EQ 'P') THEN(DO)                          
+             CHGVAR     VAR(&RQSD) VALUE('CALL '         +                      
+                                         || &PSLIBO      +                      
+                                         |< '/'          +                      
+                                         || &PSJPID      +                      
+                                         || ' PARM(')                           
+             ENDDO                                                              
+             IF         COND(&PSAJTY *EQ 'R') THEN(DO)                          
+             CHGVAR     VAR(&RQSD) VALUE('CALL '         +                      
+                                         || &PSLIBO      +                      
+                                         |< '/'          +                      
+                                         || &PSJPID      +                      
+                                         || ' PARM('     +                      
+                                         || &Q           +                      
+                                         || &PSPID       +                      
+                                         || &Q           +                      
+                                         |> &Q           +                      
+                                         || &PSVERS      +                      
+                                         || &Q           )                      
+             ENDDO                                                              
+                                                                                
+             IF         COND((&PSAJTY *EQ 'P') *OR (&PSAJTY *EQ 'R')) +         
+                          THEN(DO)                                              
+             IF         COND(&PSPRL1 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL1)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM1 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL2 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL2)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM2 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL3 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL3)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM3 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL4 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL4)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM4 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL5 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL5)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM5 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL6 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL6)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM6 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+             IF         COND(&PSPRL7 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&J) VALUE(&PSPRL7)                                  
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |> &Q                  +               
+                                         || %SST(&PSPRM7 1 &J)  +               
+                                         || &Q                  )               
+             ENDDO                                                              
+/* ********* Removed ********** 01/07/98 *************************** */         
+/*           IF         COND(&PSPRL8 *NE '000') THEN(DO)             */         
+/*           CHGVAR     VAR(&J) VALUE(&PSPRL8)                       */         
+/*           CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +    */         
+/*                                       |> &Q                  +    */         
+/*                                       || %SST(&PSPRM8 1 &J)  +    */         
+/*                                       || &Q                  )    */         
+/*           ENDDO                                                   */         
+/* ********* End of code removed ********** 01/07/98 *************** */         
+             CHGVAR     VAR(&RQSD) VALUE(&RQSD                  +               
+                                         |< ')')                                
+             ENDDO                                                              
+/* ********* Added ********** 01/07/98 ***************************** */         
+/*                                                                   */         
+/* --------- Load batch job name ----------------------------------- */         
+/*                                                                   */         
+             IF         COND(&PSPRL8 *NE '000') THEN(DO)                        
+             CHGVAR     VAR(&JOBNAME ) VALUE(&PSPRM8)                           
+             ENDDO                                                              
+/* ********* End of code added ********** 01/07/98 ***************** */         
+/*                                                                   */         
+/* --------- Set command defaults. --------------------------------- */         
+/*                                                                   */         
+             IF         COND(&PSOUTQ *NE ' ')  THEN(DO)                         
+             CHGVAR     VAR(&OUTQ) VALUE(&PSOUTQ)                               
+             ENDDO                                                              
+             IF         COND(&PSLL   *NE ' ')  THEN(DO)                         
+             CHGVAR     VAR(&INLLIBL) VALUE(&PSLL)                              
+             ENDDO                                                              
+             IF         COND(&PSJSP *NE ' ')  THEN(DO)                          
+             CHGVAR     VAR(&JOBPTY) VALUE(&PSJSP)                              
+             ENDDO                                                              
+             IF         COND(&PSOUTP *NE ' ')  THEN(DO)                         
+             CHGVAR     VAR(&OUTPTY) VALUE(&PSOUTP)                             
+             ENDDO                                                              
+/*                                                                   */         
+/* --------- Create submit job command string. --------------------- */         
+/*                                                                   */         
+/* Changed ********** 01/07/98 - Job name from PSJPID to JOBNAME     */         
+             CHGVAR     VAR(&CMD) VALUE(+                                       
+                             'SBMJOB JOB('  +                                   
+                          || &JOBNAME       +                                   
+                          |< ') JOBD('      +                                   
+                          || &USER          +                                   
+                          |< ') JOBQ('      +                                   
+                          || &PSJOBQ        +                                   
+                          |< ') JOBPTY('    +                                   
+                          || &JOBPTY        +                                   
+                          |< ') OUTPTY('    +                                   
+                          || &OUTPTY        +                                   
+                          |< ') OUTQ('      +                                   
+                          || &OUTQ          +                                   
+                          |< ') USER('      +                                   
+                          || &USER          +                                   
+                          |< ')    CMD('    +                                   
+                          || &RQSD          +                                   
+                          |< ') INLLIBL('   +                                   
+                          || &INLLIBL       +                                   
+                          |< ')')                                               
+/*                                                                   */         
+/* --------- Execute submit command. ------------------------------- */         
+/*                                                                   */         
+             SNDPGMMSG  MSG('the value of &cmd is: ' || &CMD)                   
+             CALL       QCMDEXC (&CMD 1024.00000)                               
+/*                                                                   */         
+/* --------- Branch to normal EOJ ---------------------------------- */         
+/*                                                                   */         
+GOTO  EOJ                                                                       
+/* --------- Abnormal end of job processing ------------------------ */         
+/* --------- Override JDE Message File for Language Preference ----- */         
+ABEND:                                                                          
+             CALL PGM(J98850) PARM(&LANGMSGF)                                   
+                  MONMSG MSGID(CPF0000 CPD0000 CPC0000)                         
+             OVRMSGF MSGF(QJDEMSG)  TOMSGF(&LANGMSGF)                           
+                  MONMSG MSGID(CPF0000 CPD0000 CPC0000)                         
+                                                                                
+             SNDPGMMSG  MSGID(JDE9999) MSGF(QJDEMSG) MSGDTA(&JOBID) +           
+                          TOMSGQ(&PSMSGQ)                                       
+             MONMSG     MSGID(CPF0000 CPC0000 CPD0000)                          
+             CHGJOB     LOG(4 00 *SECLVL) SWS(1XXXXXXX)                         
+             MONMSG     MSGID(CPF0000 CPC0000 CPD0000)                          
+/*                                                                   */         
+/* --------- End of job processing --------------------------------- */         
+/*                                                                   */         
+EOJ:                                                                            
+             ENDPGM                                                             

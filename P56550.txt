@@ -1,0 +1,232 @@
+     H                                                                          
+     F****************************************************************          
+     F* Program: P56550                                              *          
+     F*    Text: DSPLOG Run Time Capture- Update QTEMP/QHSTP         *          
+     F*    Date: 01.09.98                                            *          
+     F*  Author: ce mClean                                           *          
+     F* Project: Kxxxxx                                              *          
+     F*                                                              *          
+     F****************************************************************          
+     F*      Begin Program                                           *          
+     F****************************************************************          
+     FT56550  IF  F     132            DISK                                     
+     FQHSTP   O   E                    DISK                      A              
+     IT56550  NS  01                                                            
+     I                                        1 132 RCD                         
+     I                                        1   7 TMSGID                      
+     I                                       23  32 TJBNM                       
+     I                                       23  24 TTYPE                       
+     I                                       34  43 TUSER                       
+     I                                       45  50 TJNBR                       
+     I                                       70  77 TDAT                        
+     I                                       70  71 TMM                         
+     I                                       73  74 TDD                         
+     I                                       76  77 TYY                         
+     I                                       79  86 TTIM                        
+     I                                       79  80 TTHH                        
+     I                                       82  83 TTMM                        
+     I                                       85  86 TTSS                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   6 TYMD                        
+     I                                        1   2 TYYO                        
+     I                                        3   4 TMMO                        
+     I                                        5   6 TDDO                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   6 TTIME                       
+     I                                        1   2 TTHO                        
+     I                                        3   4 TTMO                        
+     I                                        5   6 TTSO                        
+      *                                                                         
+     I            DS                                                            
+     I                                        1   2 TECD                        
+     I                                        1   1 TECD1                       
+     I                                        2   2 TECD2                       
+     I* Named constants                                                         
+24885 *             'SYSOPR    '          C         DSUSER                      
+24885I              'SEROPR    '          C         DSUSER                      
+     I              'JN'                  C         DTYPE                       
+23355I              'IPL       '          C         IPLT                        
+23355I              'IPLA      '          C         IPLA                        
+23355I              'SAVSYS    '          C         SAVSYS                      
+      *                                                                         
+     C                     READ T56550                   LR                     
+     C           *INLR     DOUEQ*ON                                             
+      *                                                                         
+      * job started- add record (non-IPL)                                       
+     C           TMSGID    IFEQ 'CPF1124'                                       
+     C                     MOVE TMSGID    $MSGID  7                             
+     C                     READ T56550                   LR                     
+      * process if the job name matches                                         
+     C           TTYPE     IFEQ 'JN'                                            
+23355C           TTYPE     OREQ 'BR'                                            
+     C                     MOVE TJBNM     JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C                     MOVE TJNBR     JOBNBR                                
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+     C* 23355              MOVE 'CPF1124' MSGID                                 
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     WRITEQHSTR                                           
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      * job started- add record (IPL)                                           
+     C           TMSGID    IFEQ 'CPF0930'                  PWRDWNSYS            
+     C                     MOVE TMSGID    $MSGID  7                             
+     C                     READ T56550                   LR                     
+      * process if the job name matches                                         
+23355C           TTYPE     IFEQ 'QS'                                            
+     C                     MOVE IPLT      JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C                     MOVE TJNBR     JOBNBR                                
+      * use same job number for IPL complete msg                                
+23355C                     MOVE TJNBR     $OBNBR  6                             
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     WRITEQHSTR                                           
+      * if SAVSYS before, write completion                                      
+     C           $OBNB2    IFGT ' '                                             
+     C                     MOVE SAVSYS    JOBNAM                                
+     C                     MOVE $OBNB2    JOBNBR                                
+     C                     MOVE $USER     USRNAM                                
+     C                     MOVE *BLANKS   MSGID                                 
+     C                     MOVEL'CPF1164' MSGID                                 
+     C                     WRITEQHSTR                                           
+     C                     ENDIF                                                
+      *                                                                         
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      * job started- add record (SAVYSYS)                                       
+     C           TMSGID    IFEQ 'BRM1951'                  SAVSYS               
+     C                     MOVE TMSGID    $MSGID  7                             
+     C                     READ T56550                   LR                     
+      * process if the job name matches                                         
+23355C           TTYPE     IFEQ 'DS'                                            
+     C                     MOVE SAVSYS    JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C                     MOVE TJNBR     JOBNBR                                
+      * use same job number for SAVSYS complete msg                             
+23355C                     MOVE TJNBR     $OBNB2  6                             
+23355C                     MOVE TUSER     $USER  10                             
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     WRITEQHSTR                                           
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      * job started- add record (IPL after abnormal end)                        
+     C           TMSGID    IFEQ 'CPF0998'                  PWRDWNSYS            
+     C                     MOVE TMSGID    $MSGID  7                             
+     C                     READ T56550                   LR                     
+23355C           TTYPE     IFEQ 'SC'                                            
+23355C                     MOVELIPLA      JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C                     MOVE $OBNBR    JOBNBR                                
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     WRITEQHSTR                                           
+      *                                                                         
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      * job ended- add another record (non-IPL)                                 
+     C           TMSGID    IFEQ 'CPF1164'                                       
+     C                     MOVE TMSGID    $MSGID  7                             
+      * find the end code                                                       
+     C                     MOVE *BLANKS   TECDES  2                             
+     C                     MOVE *BLANKS   TECD                                  
+     C           'code'    SCAN RCD       POS     30                            
+     C                     Z-ADD2         LEN     30                            
+     C           POS       IFGT 1                                               
+     C                     ADD  5         POS                                   
+     C           LEN       SUBSTRCD:POS   TECD      P                           
+      *                                                                         
+     C           TECD2     IFEQ *BLANKS                                         
+     C                     MOVE TECD1     TECD2                                 
+     C                     MOVE *BLANKS   TECD1                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     MOVE TECD      TECDES                                
+     C                     ENDIF                                                
+      *                                                                         
+     C                     READ T56550                   LR                     
+      * process if the user matches                                             
+     C           TTYPE     IFEQ 'JN'                                            
+23355C           TTYPE     OREQ 'BR'                                            
+     C                     MOVE TJBNM     JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C                     MOVE TJNBR     JOBNBR                                
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+     C* T23355             MOVE 'CPF1164' MSGID                                 
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     MOVE TECDES    MSGTYP                                
+     C                     WRITEQHSTR                                           
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+      * job ended- add another record (IPL)                                     
+     C           TMSGID    IFEQ 'CPF0934'                  IPL Copmleted        
+     C                     MOVE TMSGID    $MSGID  7                             
+      * find the end code                                                       
+     C                     MOVE *BLANKS   TECDES  2                             
+     C                     MOVE *BLANKS   TECD                                  
+     C           'code'    SCAN RCD       POS     30                            
+     C                     Z-ADD2         LEN     30                            
+     C           POS       IFGT 1                                               
+     C                     ADD  5         POS                                   
+     C           LEN       SUBSTRCD:POS   TECD      P                           
+      *                                                                         
+     C           TECD2     IFEQ *BLANKS                                         
+     C                     MOVE TECD1     TECD2                                 
+     C                     MOVE *BLANKS   TECD1                                 
+     C                     ENDIF                                                
+      *                                                                         
+     C                     MOVE TECD      TECDES                                
+     C                     ENDIF                                                
+      *                                                                         
+     C                     READ T56550                   LR                     
+      * process if the user matches                                             
+23355C           TTYPE     IFEQ 'SC'                                            
+     C                     MOVE TJBNM     JOBNAM                                
+     C                     MOVE TUSER     USRNAM                                
+     C* T23355             MOVE TJNBR     JOBNBR                                
+23355C                     MOVE $OBNBR    JOBNBR                                
+23355C           TTYPE     IFEQ 'SC'                                            
+23355C                     MOVELIPLT      JOBNAM                                
+23355C                     ENDIF                                                
+     C                     EXSR CVTDAT                                          
+     C                     MOVE TYMD      YYMMDD                                
+     C                     MOVE TTIME     TIME                                  
+     C* T23355             MOVE 'CPF1164' MSGID                                 
+23355C                     MOVE $MSGID    MSGID                                 
+     C                     MOVE TECDES    MSGTYP                                
+     C                     WRITEQHSTR                                           
+     C                     ENDIF                                                
+     C                     ENDIF                                                
+      *                                                                         
+     C                     READ T56550                   LR                     
+     C                     ENDDO                                                
+      *****************************************************                     
+     C           CVTDAT    BEGSR                                                
+      * convert message date to YYJulian ******************                     
+     C                     MOVE TMM       TMMO                                  
+     C                     MOVE TDD       TDDO                                  
+     C                     MOVE TYY       TYYO                                  
+      *                                                                         
+     C                     MOVE TTHH      TTHO                                  
+     C                     MOVE TTMM      TTMO                                  
+     C                     MOVE TTSS      TTSO                                  
+      *                                                                         
+     C                     ENDSR                                                
