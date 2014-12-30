@@ -1,0 +1,219 @@
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+ 5722QU1  V5R4M0  060210         IBM Query for iSeries        S105BRYM 12/30/14   11:20:25         Page    1
+
+
+   Query . . . . . . . . . . . . . . . . . Q9501D
+     Library . . . . . . . . . . . . . . . SERUTL
+   Query text  . . . . . . . . . . . . . . F9501A Sleeper Schedule- Last Program Name Used
+   Query CCSID . . . . . . . . . . . . . . 65535
+   Query language id . . . . . . . . . . . ENU
+   Query country or region id  . . . . . . US
+   Collating sequence  . . . . . . . . . . Hexadecimal
+
+
+
+
+
+   Processing options
+     Use rounding  . . . . . . . . . . . . Yes (default)
+     Ignore decimal data errors  . . . . . No (default)
+     Ignore substitution warnings  . . . . Yes
+     Use collating for all compares  . . . Yes
+
+
+
+ Selected files
+
+   ID     File           Library       Member        Record Format
+
+   T01    F9501          JDESEC        *FIRST        I9501
+   T02    F9801          JDESEC        *FIRST        I9801
+
+
+ Join tests
+
+   Type of join  . . . . . . . . . . . . . Matched records with primary file
+
+   Field              Test              Field
+
+   UNJPID             EQ                SIMID
+
+
+ Select record tests
+
+   AND/OR   Field             Test     Value (Field, Numbers, or 'Characters')
+
+            UNAJTY            NE       'S'
+
+
+ Ordering of selected fields
+
+   Field           Sort      Ascending/  Break  Field
+   Name            Priority  Descending  Level  Text
+
+   T01.UNAJTY                                   Automatic Job Record Type. . . . . . . .
+   T01.UNJTD                                    Automated Job Start Date . . . . . . . .
+   T01.UNJTTM                                   Unattended Job Start Time. . . . . . . .
+   T01.UNSUN                                    Validation for Sunday. . . . . . . . . .
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+                                 IBM Query for iSeries                 12/30/14   11:20:25         Page    2
+
+
+ Ordering of selected fields (continued)
+
+   Field           Sort      Ascending/  Break  Field
+   Name            Priority  Descending  Level  Text
+
+   T01.UNMON                                    Validation for Monday. . . . . . . . . .
+   T01.UNTUE                                    Validation for Tuesday . . . . . . . . .
+   T01.UNWED                                    Validation for Wednesday . . . . . . . .
+   T01.UNTHR                                    Validation for Thursday. . . . . . . . .
+   T01.UNFRI                                    Validation for Friday. . . . . . . . . .
+   T01.UNSAT                                    Validation for Saturday. . . . . . . . .
+   T01.UNRFRQ                                   Automated Job Run Frequency. . . . . . .
+   T01.UNSY                                     System Code. . . . . . . . . . . . . . .
+   T01.UNJPID                                   Program ID . . . . . . . . . . . . . . .
+   T01.UNLL                                     Library List Name. . . . . . . . . . . .
+   T01.UNJOBQ                                   Batch Job Queue. . . . . . . . . . . . .
+   T01.UNPRM8      10        A                  Program Parameter 8 . . . . .. . . . ..
+   T02.SIMD                                     Description. . . . . . . . . . . . . . .
+
+
+ Report column formatting and summary functions
+   Summary functions:  1-Total, 2-Average, 3-Minimum, 4-Maximum, 5-Count           Overrides
+   Field           Summary    Column                                Dec  Null       Dec  Numeric
+   Name            Functions  Spacing  Column Headings         Len  Pos  Cap   Len  Pos  Editing
+
+   T01.UNAJTY                 0                                  1
+
+                                       -
+   T01.UNJTD                  2         Start                    6    0                     Yes
+                                         Date
+                                       -------
+   T01.UNJTTM                 2        Start                     6    0                     Yes
+                                        Time
+                                       ------
+   T01.UNSUN                  2                                  1
+                                       S
+                                       --
+   T01.UNMON                  0                                  1
+                                       M
+                                       --
+   T01.UNTUE                  0                                  1
+                                       T
+                                       --
+   T01.UNWED                  0                                  1
+                                       W
+                                       --
+   T01.UNTHR                  0                                  1
+                                       T
+                                       --
+   T01.UNFRI                  0                                  1
+                                       F
+                                       --
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+                                 IBM Query for iSeries                 12/30/14   11:20:25         Page    3
+
+
+ Report column formatting and summary functions (continued)
+   Summary functions:  1-Total, 2-Average, 3-Minimum, 4-Maximum, 5-Count           Overrides
+   Field           Summary    Column                                Dec  Null       Dec  Numeric
+   Name            Functions  Spacing  Column Headings         Len  Pos  Cap   Len  Pos  Editing
+
+   T01.UNSAT                  0                                  1
+                                       S
+                                       -
+   T01.UNRFRQ                 2        Run                       1
+                                       Frq
+                                       ---
+   T01.UNSY                   2        Syst                      4
+                                       Code
+                                       ----
+   T01.UNJPID                 2          Program                10
+                                           ID
+                                       ----------
+   T01.UNLL                   2          Library                10
+                                          List
+                                       ----------
+   T01.UNJOBQ                 2            Job                  10
+                                          Queue
+                                       ----------
+   T01.UNPRM8                 2        Job                      40              10
+                                       Name
+                                       ----------
+   T02.SIMD                   2               Member            60
+                                            Description
+                                       --------------------
+
+
+ Selected output attributes
+
+   Output type . . . . . . . . . . . . . . Printer
+   Form of output  . . . . . . . . . . . . Detail
+   Line wrapping . . . . . . . . . . . . . No
+
+
+
+ Printer Output
+
+   Printer device  . . . . . . . . . . . . *PRINT
+   Report size
+     Length  . . . . . . . . . . . . . . .  66 (default)
+     Width . . . . . . . . . . . . . . . . 198
+   Report start line . . . . . . . . . . .   6
+   Report end line . . . . . . . . . . . .  60
+   Report line spacing . . . . . . . . . . Single space
+   Print definition  . . . . . . . . . . . No
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+                                 IBM Query for iSeries                 12/30/14   11:20:25         Page    4
+
+
+ Printer Spooled Output
+
+   Spool the output  . . . . . . . . . . . (Defaults to value in print file, QPQUPRFIL)
+   Form type . . . . . . . . . . . . . . . (Defaults to value in print file, QPQUPRFIL)
+   Copies  . . . . . . . . . . . . . . . .   1
+   Hold  . . . . . . . . . . . . . . . . . (Defaults to value in print file, QPQUPRFIL)
+
+
+
+ Cover Page
+
+   Print cover page  . . . . . . . . . . . No
+     Cover page title
+
+
+
+ Page headings and footings
+
+   Print standard page heading . . . . . . Yes
+
+     Page heading
+       F9501 Sleeper Schedule- Last Job Name Used
+
+     Page footing
+       serutl/Q9501D
+
+
+
+                 * * * * *    E N D   O F   Q U E R Y   P R I N T   * * * * *

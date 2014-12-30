@@ -1,0 +1,35 @@
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+  TIME: 11:20:38                                     SERICOL, INC.                                             DATE: 12/30/14
+                                              CHECK DATABASE FILE OUTPUT                                       PAGE:   1
+                                              Database File Field Report
+
+                                                   File: QHSTP
+                                                Library: SERUTL
+                                                   Desc: QHSTP - outfile for CVTQHST
+
+----------- C O U N T S ------------          ----------- D E T A I L S ------------          -- LOGICAL VIEW --
+ Fields:   16         Members:     1            File Type: P      Member: QHSTP               Pfile:
+Formats:     1           MALF:                Access Path: A      Format: QHSTR                Pmbr:
+Records:             2                        Select/Omit: N   Last Used: 12/21/13
+                                                Join File:
+
+Key  Field Name  Sequence  Length  Decimal  Buffer  ------------- Field Description Text -------------
+
+     SYSNAM                  08             00001   System name
+     JOBNAM                  10             00009   Job name
+     USRNAM                  10             00019   User name
+     JOBNBR                  06             00029   Job number
+     CENTRY                  01             00035   Century - 1 if GT 40
+     YYMMDD                  06             00036   Date as YYMMDD
+     TIME                    06             00042   Time
+     MSGID                   07             00048   Message ID
+     MSGF                    10             00055   Message file
+     MSGFLB                  10             00065   Message file library
+     MSGTYP                  02             00075   Message type - See RCVMSG command
+     SEVCDE                  02             00077   Severity code
+     MTXLEN                  05      00     00079   Message text length
+     MDTLEN                  05      00     00082   Message data length
+     MSGTXT                  32             00085   Message text
+     MSGDTA                  64             00217   Message data
